@@ -24,11 +24,11 @@ class JobInvocation < ActiveRecord::Base
 
   scoped_search :on => [:job_name], :complete_value => true
 
-  attr_accessor :start_before
+  attr_accessor :start_before, :cronline, :max_iteration, :end_time, :input_type, :time_hash, :minutes, :hours, :days, :days_of_week
   attr_writer :start_at
 
   def self.allowed_trigger_modes
-    %w(immediate future)
+    %w(immediate future recurring)
   end
 
   def to_action_input

@@ -32,9 +32,18 @@ function job_invocation_form_binds() {
   });
 
   $('input.trigger_mode_selector').on('click', function () {
-     $("#trigger_mode_future").hide();
+      ["future", "immediate", "recurring"].forEach(function(type) {
+        $("#trigger_mode_" + type).hide();
+      });
      $('#trigger_mode_' + $(this).val()).show();
    });
+
+  $('input.input_type_selector').on('click', function () {
+     ['cronline', 'monthly', 'hourly', 'daily'].forEach(function(type) {
+         $("#input_type_" + type).hide();
+     })
+      $('#input_type_' + $(this).val()).show();
+  });
 
   $('select#job_invocation_job_name').on('change', refresh_execution_form);
 

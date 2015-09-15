@@ -31,6 +31,11 @@ class JobInvocationsController < ApplicationController
         ForemanTasks.delay action,
                            job_invocation.delay_options,
                            job_invocation
+      elsif job_invocation.trigger_mode == :recurring
+        ForemanTasks.sync_task(::Actions::RecurringAction,
+                               @composer.compose_recurring_logic(params[:job_invocation]),
+                               action,
+                               job_invocation)
       else
         ForemanTasks.async_task(action, job_invocation)
       end

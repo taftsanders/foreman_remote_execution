@@ -24,6 +24,18 @@ class JobInvocationComposer
     self
   end
 
+  def compose_recurring_logic(params)
+    cronline = if params[:input_type] == 'cronline'
+                 params[:cronline]
+               else
+                 ::ForemanTasks::RecurringLogic.assemble_cronline(params)
+               end
+    ::ForemanTasks::RecurringLogic.new_from_cronline(cronline).tap do |manager|
+      manager.end_time = Time.strptime(params[:end_time], "%Y-%m-%d %H:%M") unless params[:end_time].blank?
+      manager.max_iteration = params[:max_iteration] unless params[:max_iteration].blank?
+    end
+  end
+
   def compose_from_invocation(invocation)
     @params = {}
 
