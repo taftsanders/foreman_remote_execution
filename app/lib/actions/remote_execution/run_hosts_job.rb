@@ -3,9 +3,14 @@ module Actions
     class RunHostsJob < Actions::ActionWithSubPlans
 
       middleware.use Actions::Middleware::BindJobInvocation
+      middleware.use Actions::Middleware::AssignCurrentTaskGroups
 
       def delay(delay_options, job_invocation)
         job_invocation.targeting.resolve_hosts! if job_invocation.targeting.static?
+        super job_invocation
+      end
+
+      def plan(job_invocation)
         action_subject(job_invocation)
         super(delay_options, job_invocation, true)
       end
