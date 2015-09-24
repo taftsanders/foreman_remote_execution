@@ -20,20 +20,22 @@ class JobInvocationComposer
     job_invocation.start_at = job_invocation_base[:start_at]
     job_invocation.start_before = job_invocation_base[:start_before]
     job_invocation.task_group = JobInvocationTaskGroup.new
+    job_invocation.recurring_options = {}
 
     @job_template_ids = validate_job_template_ids(job_templates_base.keys.compact)
     self
   end
 
-  def compose_recurring_logic(params)
-    cronline = if params[:input_type] == 'cronline'
-                 params[:cronline]
+  def compose_recurring_logic(options)
+    recurring_options = options[:recurring_options]
+    cronline = if options[:input_type] == 'cronline'
+                 recurring_options[:cronline]
                else
-                 ::ForemanTasks::RecurringLogic.assemble_cronline(params)
+                 ::ForemanTasks::RecurringLogic.assemble_cronline(cronline_hash options)
                end
     ::ForemanTasks::RecurringLogic.new_from_cronline(cronline).tap do |manager|
-      manager.end_time = Time.strptime(params[:end_time], "%Y-%m-%d %H:%M") unless params[:end_time].blank?
-      manager.max_iteration = params[:max_iteration] unless params[:max_iteration].blank?
+      manager.end_time = Time.new(*recurring_options[:end_time].values) if recurring_options[:end_time_limited]
+      manager.max_iteration = recurring_options[:max_iteration] unless recurring_options[:max_iteration].blank?
     end
   end
 
@@ -246,5 +248,24 @@ class JobInvocationComposer
 
   def validate_host_ids(ids)
     Host.authorized(Targeting::RESOLVE_PERMISSION, Host).where(:id => ids).pluck(:id)
+  end
+
+  def cronline_hash(recurring_type, recurring_options)
+    hash = Hash[[:years, :months, :days, :hours, :minutes].zip(recurring_options[:time].values)]
+    days_of_week = recurring_options[:days_of_week]
+                    .select { |value, index| value == "1" }
+                    .values.join(',')
+    hash.update :days_of_week => days_of_week
+    allowed_keys = case recurring_type
+      when 'monthly'
+        [:minutes, :hours, :days]
+      when 'weekly'
+        [:minutes, :hours, :days_of_week]
+      when 'daily'
+        [:minutes, :hours]
+      when 'hourly'
+        [:minutes]
+      end
+    hash.select { |key, _| allowed_keys.include? key }
   end
 end

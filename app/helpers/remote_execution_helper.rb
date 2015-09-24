@@ -169,4 +169,28 @@ module RemoteExecutionHelper
       tab == :overview ? active : inactive
     end
   end
+
+  def time_f(f, attr, field_options = {}, time_options = {}, html_options = {})
+    f.fields_for attr do |fields|
+      field(fields, attr, field_options) do
+        fields.time_select attr, time_options, html_options
+      end
+    end
+  end
+
+  def datetime_f(f, attr, field_options = {}, datetime_options = {}, html_options = {})
+    f.fields_for attr do |fields|
+      field(fields, attr, field_options) do
+        fields.datetime_select attr, datetime_options, html_options
+      end
+    end
+  end
+
+  def inline_checkboxes_f(f, attr, field_options = {}, checkboxes = {}, options = {})
+    field(f, attr, field_options) do
+      checkboxes.map do |key, name|
+        [f.check_box(key, options), " #{name} "]
+      end.flatten.join('')
+    end
+  end
 end

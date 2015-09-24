@@ -14,10 +14,13 @@ module ForemanRemoteExecution
         invocation.save
       end
     end
+
+    let(:host) { FactoryGirl.create(:host) }
+    let(:task) { OpenStruct.new(:id => '123').tap { |o| o.stubs(:add_missing_task_groups) } }
     let(:action) do
       action = create_action(Actions::RemoteExecution::RunHostsJob)
       action.expects(:action_subject).with(job_invocation)
-      ForemanTasks::Task::DynflowTask.stubs(:find_by_external_id!).returns(OpenStruct.new(:id => '123'))
+      ForemanTasks::Task::DynflowTask.stubs(:find_by_external_id!).returns(task)
       plan_action(action, job_invocation)
     end
 

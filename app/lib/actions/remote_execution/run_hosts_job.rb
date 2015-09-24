@@ -12,7 +12,7 @@ module Actions
       end
 
       def plan(job_invocation, locked = false, connection_options = {})
-        job_invocation.task_group.save! if job_invocation.task_group.new_record?
+        job_invocation.task_group.save! if job_invocation.task_group.try(:new_record?)
         task.add_missing_task_groups(job_invocation.task_group)
         action_subject(job_invocation) unless locked
         job_invocation.targeting.resolve_hosts! if job_invocation.targeting.dynamic? || !locked

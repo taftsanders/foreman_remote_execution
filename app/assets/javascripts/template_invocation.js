@@ -38,11 +38,20 @@ function job_invocation_form_binds() {
      $('#trigger_mode_' + $(this).val()).show();
    });
 
-  $('input.input_type_selector').on('click', function () {
-     ['cronline', 'monthly', 'hourly', 'daily'].forEach(function(type) {
+  $('#job_invocation_input_type').on('change', function () {
+      ['cronline', 'monthly', 'weekly', 'hourly', 'daily'].forEach(function(type) {
          $("#input_type_" + type).hide();
      })
       $('#input_type_' + $(this).val()).show();
+  });
+
+  $('input.end_time_limit_selector').on('click', function() {
+    var o = $("#end_time_limit_form");
+    if($(this).val() === 'true') {
+      o.show();
+    } else {
+      o.hide();
+    };
   });
 
   $('select#job_invocation_job_name').on('change', refresh_execution_form);
