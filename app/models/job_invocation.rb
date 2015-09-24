@@ -22,9 +22,13 @@ class JobInvocation < ActiveRecord::Base
   belongs_to :last_task, :class_name => 'ForemanTasks::Task'
   has_many :sub_tasks, :through => :last_task
 
+  has_one :task_group, :class_name => 'JobInvocationTaskGroup'
+
+  delegate :tasks, :to => :task_group
+
   scoped_search :on => [:job_name], :complete_value => true
 
-  attr_accessor :start_before, :cronline, :max_iteration, :end_time, :input_type, :time_hash, :minutes, :hours, :days, :days_of_week
+  attr_accessor :start_before, :cronline, :max_iteration, :end_time, :input_type, :minutes, :hours, :days, :days_of_week
   attr_writer :start_at
 
   def self.allowed_trigger_modes

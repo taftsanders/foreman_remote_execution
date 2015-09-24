@@ -19,6 +19,7 @@ class JobInvocationComposer
     job_invocation.trigger_mode = job_invocation_base[:trigger_mode]
     job_invocation.start_at = job_invocation_base[:start_at]
     job_invocation.start_before = job_invocation_base[:start_before]
+    job_invocation.task_group = JobInvocationTaskGroup.new
 
     @job_template_ids = validate_job_template_ids(job_templates_base.keys.compact)
     self
