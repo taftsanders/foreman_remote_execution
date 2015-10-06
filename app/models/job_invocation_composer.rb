@@ -20,7 +20,7 @@ class JobInvocationComposer
     job_invocation.start_at = job_invocation_base[:start_at]
     job_invocation.start_before = job_invocation_base[:start_before]
     job_invocation.task_group = JobInvocationTaskGroup.new
-    job_invocation.recurring_options = {}
+    job_invocation.recurring_options = job_invocation_base.fetch(:recurring_options, {})
 
     @job_template_ids = validate_job_template_ids(job_templates_base.keys.compact)
     self
@@ -31,10 +31,10 @@ class JobInvocationComposer
     cronline = if options[:input_type] == 'cronline'
                  recurring_options[:cronline]
                else
-                 ::ForemanTasks::RecurringLogic.assemble_cronline(cronline_hash options)
+                 ::ForemanTasks::RecurringLogic.assemble_cronline(cronline_hash *options.values_at(:input_type, :recurring_options))
                end
     ::ForemanTasks::RecurringLogic.new_from_cronline(cronline).tap do |manager|
-      manager.end_time = Time.new(*recurring_options[:end_time].values) if recurring_options[:end_time_limited]
+      manager.end_time = Time.new(*recurring_options[:end_time].values) if recurring_options[:end_time_limited] == 'true'
       manager.max_iteration = recurring_options[:max_iteration] unless recurring_options[:max_iteration].blank?
     end
   end

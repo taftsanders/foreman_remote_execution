@@ -27,15 +27,14 @@ class JobInvocationsController < ApplicationController
     action = ::Actions::RemoteExecution::RunHostsJob
     if @composer.save
       job_invocation = @composer.job_invocation
-      if job_invocation.trigger_mode == :future
+      case job_invocation.trigger_mode
+      when :future
         ForemanTasks.delay action,
                            job_invocation.delay_options,
                            job_invocation
-      elsif job_invocation.trigger_mode == :recurring
-        ForemanTasks.sync_task(::Actions::RecurringAction,
-                               @composer.compose_recurring_logic(params[:job_invocation]),
-                               action,
-                               job_invocation)
+      when :recurring
+        @composer.compose_recurring_logic(params[:job_invocation])
+          .start(action, job_invocation)
       else
         ForemanTasks.async_task(action, job_invocation)
       end

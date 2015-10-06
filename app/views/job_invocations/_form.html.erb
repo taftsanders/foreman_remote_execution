@@ -118,7 +118,7 @@
 
         <%= number_f recurring_options_fields, :max_iteration, :label => _('Repeat N times'), :min => 1, :placeholder => 'N' %>
         <%= field(recurring_options_fields, :end_time_limit_select, :label => _("Ends"), :control_group_id => "end_time_limit_select") do
-          radio_button_f(recurring_options_fields, :end_time_limited, :value => false, :text => _("Never"), :class => 'end_time_limit_selector') +
+          radio_button_f(recurring_options_fields, :end_time_limited, :value => false, :checked=> true, :text => _("Never"), :class => 'end_time_limit_selector') +
           radio_button_f(recurring_options_fields, :end_time_limited, :value => true, :text => _("On"), :class => 'end_time_limit_selector')
           end %>
         <fieldset id="end_time_limit_form" class="input_type_form hidden">

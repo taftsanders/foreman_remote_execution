@@ -1,5 +1,5 @@
 class JobInvocationTaskGroup < ::ForemanTasks::TaskGroup
 
-  belongs_to :job_invocation
+  has_one :job_invocation
 
 end

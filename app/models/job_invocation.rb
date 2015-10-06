@@ -22,9 +22,9 @@ class JobInvocation < ActiveRecord::Base
   belongs_to :last_task, :class_name => 'ForemanTasks::Task'
   has_many :sub_tasks, :through => :last_task
 
-  has_one :task_group, :class_name => 'JobInvocationTaskGroup'
+  belongs_to :task_group, :class_name => 'JobInvocationTaskGroup'
 
-  delegate :tasks, :to => :task_group
+  has_many :tasks, :through => :task_group
 
   scoped_search :on => [:job_name], :complete_value => true
 
