@@ -83,13 +83,12 @@
     <fieldset id="trigger_mode_recurring" class="trigger_mode_form <%= 'hidden' if @composer.job_invocation.trigger_mode != :recurring %>">
       <%= selectable_f f, :input_type, %w(cronline monthly weekly daily hourly), {}, :label => _("Repeats") %>
       <%= f.fields_for 'recurring_options' do |recurring_options_fields| %>
-        <fieldset id="input_type_cronline" class="input_type_form <%= 'hidden' if @composer.job_invocation.input_type != :cronline %>">
+        <fieldset id="input_type_cronline" class="input_type_form">
           <%= text_f recurring_options_fields, :cronline, :label => _('Cron line') %>
         </fieldset>
 
         <fieldset id="input_type_monthly" class="input_type_form <%= 'hidden' if @composer.job_invocation.input_type != :monthly %>">
           <%= text_f recurring_options_fields, :days, :label => _('Days'), :placeholder => '1,2...' %>
-          <%= time_f(recurring_options_fields, :time, :label => _("At")) %>
         </fieldset>
 
         <fieldset id="input_type_weekly" class="input_type_form <%= 'hidden' if @composer.job_invocation.input_type != :weekly %>">
@@ -105,15 +104,10 @@
                                       6 => _("Sat"),
                                       7 => _("Sun") }) %>
                                       <% end %>
-          <%= time_f(recurring_options_fields, :time, :label => _("At")) %>
         </fieldset>
 
-        <fieldset id="input_type_daily" class="input_type_form <%= 'hidden' if @composer.job_invocation.input_type != :daily%>">
-          <%= time_f(recurring_options_fields, :time, :label => _("At")) %>
-        </fieldset>
-
-        <fieldset id="input_type_hourly" class="input_type_form <%= 'hidden' if @composer.job_invocation.input_type != :hourly%>">
-          <%= time_f(recurring_options_fields, :time, { :label => _("At minutes") }, { :discard_hour => true } ) %>
+        <fieldset id="time_picker" class="input_type_form hidden">
+                <%= time_f(recurring_options_fields, :time, { :label => _("At") }, { :time_separator => '' }) %>
         </fieldset>
 
         <%= number_f recurring_options_fields, :max_iteration, :label => _('Repeat N times'), :min => 1, :placeholder => 'N' %>
@@ -122,7 +116,7 @@
           radio_button_f(recurring_options_fields, :end_time_limited, :value => true, :text => _("On"), :class => 'end_time_limit_selector')
           end %>
         <fieldset id="end_time_limit_form" class="input_type_form hidden">
-          <%= datetime_f recurring_options_fields, :end_time, { :label => _("Ends at") }, { :use_month_numbers => true, :use_two_digit_numbers => true } %>
+          <%= datetime_f recurring_options_fields, :end_time, { :label => _("Ends at") }, { :use_month_numbers => true, :use_two_digit_numbers => true, :time_separator => '' } %>
         </fieldset>
 
       </span>

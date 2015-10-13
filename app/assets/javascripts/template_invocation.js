@@ -38,19 +38,31 @@ function job_invocation_form_binds() {
      $('#trigger_mode_' + $(this).val()).show();
    });
 
-  $('#job_invocation_input_type').on('change', function () {
-      ['cronline', 'monthly', 'weekly', 'hourly', 'daily'].forEach(function(type) {
-         $("#input_type_" + type).hide();
-     })
-      $('#input_type_' + $(this).val()).show();
+    $('#job_invocation_input_type').on('change', function () {
+	['cronline', 'monthly', 'weekly', 'hourly', 'daily'].forEach(function(type) {
+            $("#input_type_" + type).hide();
+	})
+	$('#input_type_' + $(this).val()).show();
+	var timepicker = $('#time_picker');
+	if($(this).val() == 'cronline') {
+	    timepicker.hide();
+	} else {
+	    if($(this).val() == 'hourly') {
+		$('#s2id_job_invocation_recurring_options_time_time_4i').hide();
+	    } else {
+		$('#s2id_job_invocation_recurring_options_time_time_4i').show();
+	    }
+	    timepicker.show();
+	}
+
   });
 
   $('input.end_time_limit_selector').on('click', function() {
     var o = $("#end_time_limit_form");
     if($(this).val() === 'true') {
-      o.show();
+	o.show();
     } else {
-      o.hide();
+	o.hide();
     };
   });
 
