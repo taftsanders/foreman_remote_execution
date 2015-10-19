@@ -16,7 +16,7 @@ module ForemanRemoteExecution
     end
 
     let(:host) { FactoryGirl.create(:host) }
-    let(:task) { OpenStruct.new(:id => '123').tap { |o| o.stubs(:add_missing_task_groups) } }
+    let(:task) { OpenStruct.new(:id => '123').tap { |o| o.stubs(:add_missing_task_groups); o.stubs(:task_groups).returns([]) } }
     let(:action) do
       action = create_action(Actions::RemoteExecution::RunHostsJob)
       action.expects(:action_subject).with(job_invocation)

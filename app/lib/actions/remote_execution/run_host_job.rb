@@ -2,8 +2,6 @@ module Actions
   module RemoteExecution
     class RunHostJob < Actions::EntryAction
 
-      middleware.use Actions::Middleware::InheritTaskGroups
-
       def resource_locks
         :link
       end
