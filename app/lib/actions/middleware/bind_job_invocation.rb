@@ -4,7 +4,11 @@ module Actions
     class BindJobInvocation < ::Dynflow::Middleware
 
       def delay(*args)
-        _schedule_options, job_invocation = args
+        schedule_options, job_invocation = args
+        if !job_invocation.nil? && job_invocation.last_task_id != task.id
+          job_invocation = job_invocation.dup.tap(&:save!)
+          args = [schedule_options, job_invocation]
+        end
         pass(*args).tap { bind(job_invocation) }
       end
 
