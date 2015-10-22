@@ -42,7 +42,7 @@ module ForemanRemoteExecution
 
     it 'uses the BindJobInvocation middleware' do
       action
-      job_invocation.last_task_id.must_equal '123'
+      job_invocation.task_id.must_equal '123'
     end
   end
 end

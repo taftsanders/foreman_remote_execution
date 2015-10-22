@@ -5,7 +5,7 @@ module Actions
 
       def delay(*args)
         schedule_options, job_invocation = args
-        if !job_invocation.nil? && job_invocation.last_task_id != task.id
+        if !job_invocation.nil? && job_invocation.task_id != task.id
           job_invocation = job_invocation.dup.tap(&:save!)
           args = [schedule_options, job_invocation]
         end
@@ -24,7 +24,7 @@ module Actions
       end
 
       def bind(job_invocation)
-        job_invocation.update_attribute :last_task_id, task.id if job_invocation.last_task_id != task.id
+        job_invocation.update_attribute :task_id, task.id if job_invocation.task_id != task.id
       end
 
     end
