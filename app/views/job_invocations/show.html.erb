@@ -2,8 +2,8 @@
 <% stylesheet 'job_invocations' %>
 <% javascript 'template_invocation' %>
 
-<% if @job_invocation.last_task %>
-  <% title_actions(button_group(job_invocation_task_buttons(@job_invocation.last_task))) %>
+<% if @job_invocation.task %>
+  <% title_actions(button_group(job_invocation_task_buttons(@job_invocation.task))) %>
 <% end %>
 
 <ul class="nav nav-tabs" data-tabs="tabs">

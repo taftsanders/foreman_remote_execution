@@ -5,8 +5,8 @@ module Actions
 
       def delay(*args)
         schedule_options, job_invocation = args
-        if !job_invocation.nil? && job_invocation.task_id != task.id
-          job_invocation = job_invocation.dup.tap(&:save!)
+        if !job_invocation.task_id.nil? && job_invocation.task_id != task.id
+          job_invocation = job_invocation.deep_clone
           args = [schedule_options, job_invocation]
         end
         pass(*args).tap { bind(job_invocation) }

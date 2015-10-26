@@ -19,8 +19,8 @@ class JobInvocation < ActiveRecord::Base
 
   include ForemanTasks::Concerns::ActionSubject
 
-  belongs_to :last_task, :class_name => 'ForemanTasks::Task'
-  has_many :sub_tasks, :through => :last_task
+  belongs_to :task, :class_name => 'ForemanTasks::Task'
+  has_many :sub_tasks, :through => :task
 
   belongs_to :task_group, :class_name => 'JobInvocationTaskGroup'
 
@@ -30,6 +30,14 @@ class JobInvocation < ActiveRecord::Base
 
   attr_accessor :start_before, :recurring_options, :input_type, :trigger_mode
   attr_writer :start_at
+
+  def deep_clone
+    JobInvocationComposer.new.compose_from_invocation(self).job_invocation.tap do |invocation|
+      invocation.task_group = JobInvocationTaskGroup.new.tap(&:save!)
+      invocation.template_invocations = self.template_invocations.map(&:deep_clone)
+      invocation.save!
+    end
+  end
 
   def self.allowed_trigger_modes
     %w(immediate future recurring)

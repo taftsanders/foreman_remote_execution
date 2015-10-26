@@ -10,7 +10,7 @@ module RemoteExecutionHelper
   def job_invocation_chart(invocation)
     options = { :class => 'statistics-pie small', :expandable => true, :border => 0, :show_title => true }
 
-    if (bulk_task = invocation.last_task)
+    if (bulk_task = invocation.task)
       failed_tasks = bulk_task.sub_tasks.select { |sub_task| %w(warning error).include? sub_task.result }
       cancelled_tasks, failed_tasks = failed_tasks.partition { |task| task_cancelled? task }
       success = bulk_task.output['success_count'] || 0
@@ -30,15 +30,15 @@ module RemoteExecutionHelper
   end
 
   def job_invocation_status(invocation)
-    if invocation.last_task.blank?
+    if invocation.task.blank?
       _('Job not started yet 0%')
-    elsif invocation.last_task.state == 'scheduled'
-      _('Job set to execute at %s') % invocation.last_task.start_at
-    elsif invocation.last_task.state == 'stopped' && invocation.last_task.result == 'error'
-      invocation.last_task.execution_plan.errors.map(&:message).join("\n")
+    elsif invocation.task.state == 'scheduled'
+      _('Job set to execute at %s') % invocation.task.start_at
+    elsif invocation.task.state == 'stopped' && invocation.task.result == 'error'
+      invocation.task.execution_plan.errors.map(&:message).join("\n")
     else
-      label = invocation.last_task.pending ? _('Running') : _('Finished')
-      label + ' ' + (invocation.last_task.progress * 100).to_i.to_s + '%'
+      label = invocation.task.pending ? _('Running') : _('Finished')
+      label + ' ' + (invocation.task.progress * 100).to_i.to_s + '%'
     end
   end
 
@@ -133,9 +133,9 @@ module RemoteExecutionHelper
   end
 
   def link_to_invocation_task_if_authorized(invocation)
-    if invocation.last_task.present? && invocation.last_task.state != 'scheduled'
+    if invocation.task.present? && invocation.task.state != 'scheduled'
       link_to_if_authorized job_invocation_status(invocation),
-                            hash_for_foreman_tasks_task_path(invocation.last_task).merge(:auth_object => invocation.last_task, :permission => :view_foreman_tasks)
+                            hash_for_foreman_tasks_task_path(invocation.task).merge(:auth_object => invocation.task, :permission => :view_foreman_tasks)
     else
       job_invocation_status(invocation)
     end
@@ -143,8 +143,8 @@ module RemoteExecutionHelper
 
   def invocation_count(invocation, options = {})
     options = { :unknown_string => 'N/A' }.merge(options)
-    if invocation.last_task.nil? || invocation.last_task.state != 'scheduled'
-      (invocation.last_task.try(:output) || {}).fetch(options[:output_key], options[:unknown_string])
+    if invocation.task.nil? || invocation.task.state != 'scheduled'
+      (invocation.task.try(:output) || {}).fetch(options[:output_key], options[:unknown_string])
     else
       options[:unknown_string]
     end
