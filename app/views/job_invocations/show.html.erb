@@ -9,6 +9,7 @@
 <ul class="nav nav-tabs" data-tabs="tabs">
   <li class="<%= job_invocation_active_tab(:overview, params) %>"><a href="#primary" data-toggle="tab"><%= _('Overview') %></a></li>
   <li class="<%= job_invocation_active_tab(:hosts, params) %>"><a href="#hosts" data-toggle="tab"><%= _('Hosts') %></a></li>
+  <li><a href="#related" data-toggle="tab"><%= _('Related resources') %></a></li>
 </ul>
 
 <div class="tab-content">
@@ -18,6 +19,12 @@
 
   <div class="tab-pane <%= job_invocation_active_tab(:hosts, params) %>" id="hosts" data-refresh_required="<%= @job_invocation.resolved? ? '' : 'true' %>">
     <%= render 'tab_hosts', :job_invocation => @job_invocation, :hosts => @hosts %>
+  </div>
+
+  <div class="tab-pane" id="related">
+    <div class='col-md-6'>
+      <%= render 'foreman_tasks/task_groups/tab_related', :task_group => @job_invocation.task_group %>
+    </div>
   </div>
 </div>
 
