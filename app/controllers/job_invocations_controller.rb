@@ -4,6 +4,9 @@ class JobInvocationsController < ApplicationController
   def new
     @composer = JobInvocationComposer.new.compose_from_params(
       :host_ids => params[:host_ids],
+      :job_invocation => {
+        :triggering => {}
+      },
       :targeting => {
         :targeting_type => Targeting::STATIC_TYPE,
         :bookmark_id => params[:bookmark_id]
@@ -33,7 +36,7 @@ class JobInvocationsController < ApplicationController
                            job_invocation.delay_options,
                            job_invocation
       when :recurring
-        @composer.compose_recurring_logic(params[:job_invocation])
+        ::ForemanTasks::RecurringLogic.new_from_triggering(params[:job_invocation][:triggering])
           .start(action, job_invocation)
       else
         ForemanTasks.async_task(action, job_invocation)

@@ -31,41 +31,6 @@ function job_invocation_form_binds() {
     $('#job_template_' + $(this).val()).show();
   });
 
-  $('input.trigger_mode_selector').on('click', function () {
-      ["future", "immediate", "recurring"].forEach(function(type) {
-        $("#trigger_mode_" + type).hide();
-      });
-     $('#trigger_mode_' + $(this).val()).show();
-   });
-
-    $('#job_invocation_input_type').on('change', function () {
-	['cronline', 'monthly', 'weekly', 'hourly', 'daily'].forEach(function(type) {
-            $("#input_type_" + type).hide();
-	})
-	$('#input_type_' + $(this).val()).show();
-	var timepicker = $('#time_picker');
-	if($(this).val() == 'cronline') {
-	    timepicker.hide();
-	} else {
-	    if($(this).val() == 'hourly') {
-		$('#s2id_job_invocation_recurring_options_time_time_4i').hide();
-	    } else {
-		$('#s2id_job_invocation_recurring_options_time_time_4i').show();
-	    }
-	    timepicker.show();
-	}
-
-  });
-
-  $('input.end_time_limit_selector').on('click', function() {
-    var o = $("#end_time_limit_form");
-    if($(this).val() === 'true') {
-	o.show();
-    } else {
-	o.hide();
-    };
-  });
-
   $('select#job_invocation_job_name').on('change', refresh_execution_form);
 
   $('button#refresh_execution_form').on('click', refresh_execution_form);

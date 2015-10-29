@@ -16,27 +16,14 @@ class JobInvocationComposer
     job_invocation.job_name = validate_job_name(job_invocation_base[:job_name])
     job_invocation.job_name ||= available_job_names.first if job_invocation.new_record?
     job_invocation.targeting = build_targeting
-    job_invocation.trigger_mode = job_invocation_base[:trigger_mode]
-    job_invocation.start_at = job_invocation_base[:start_at]
-    job_invocation.start_before = job_invocation_base[:start_before]
+    job_invocation.trigger_mode = triggering_base[:trigger_mode]
+    job_invocation.start_at = triggering_base[:start_at]
+    job_invocation.start_before = triggering_base[:start_before]
     job_invocation.task_group = JobInvocationTaskGroup.new
-    job_invocation.recurring_options = job_invocation_base.fetch(:recurring_options, {})
+    job_invocation.recurring_options = triggering_base[:recurring_options]
 
     @job_template_ids = validate_job_template_ids(job_templates_base.keys.compact)
     self
-  end
-
-  def compose_recurring_logic(options)
-    recurring_options = options[:recurring_options]
-    cronline = if options[:input_type] == 'cronline'
-                 recurring_options[:cronline]
-               else
-                 ::ForemanTasks::RecurringLogic.assemble_cronline(cronline_hash *options.values_at(:input_type, :recurring_options))
-               end
-    ::ForemanTasks::RecurringLogic.new_from_cronline(cronline).tap do |manager|
-      manager.end_time = Time.new(*recurring_options[:end_time].values) if recurring_options[:end_time_limited] == 'true'
-      manager.max_iteration = recurring_options[:max_iteration] unless recurring_options[:max_iteration].blank?
-    end
   end
 
   def compose_from_invocation(invocation)
@@ -165,6 +152,10 @@ class JobInvocationComposer
 
   def job_invocation_base
     @params.fetch(:job_invocation, {})
+  end
+
+  def triggering_base
+    job_invocation_base.fetch(:triggering, {})
   end
 
   def input_values_base
