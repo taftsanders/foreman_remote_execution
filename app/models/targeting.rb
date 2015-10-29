@@ -21,12 +21,16 @@ class Targeting < ActiveRecord::Base
   before_create :assign_search_query, :if => :static?
 
   def clone
-    Targeting.new(
+    if static?
+      self.dup
+    else
+      Targeting.new(
         :user => self.user,
         :bookmark_id => self.bookmark.try(:id),
         :targeting_type => self.targeting_type,
         :search_query => self.search_query
-    ).tap(&:save)
+      )
+    end.tap(&:save)
   end
 
   def resolve_hosts!
