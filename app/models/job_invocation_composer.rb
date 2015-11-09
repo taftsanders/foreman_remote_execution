@@ -240,23 +240,4 @@ class JobInvocationComposer
   def validate_host_ids(ids)
     Host.authorized(Targeting::RESOLVE_PERMISSION, Host).where(:id => ids).pluck(:id)
   end
-
-  def cronline_hash(recurring_type, recurring_options)
-    hash = Hash[[:years, :months, :days, :hours, :minutes].zip(recurring_options[:time].values)]
-    days_of_week = recurring_options[:days_of_week]
-                    .select { |value, index| value == "1" }
-                    .values.join(',')
-    hash.update :days_of_week => days_of_week
-    allowed_keys = case recurring_type
-      when 'monthly'
-        [:minutes, :hours, :days]
-      when 'weekly'
-        [:minutes, :hours, :days_of_week]
-      when 'daily'
-        [:minutes, :hours]
-      when 'hourly'
-        [:minutes]
-      end
-    hash.select { |key, _| allowed_keys.include? key }
-  end
 end
