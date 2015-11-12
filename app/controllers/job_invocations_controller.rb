@@ -1,11 +1,12 @@
 class JobInvocationsController < ApplicationController
   include Foreman::Controller::AutoCompleteSearch
 
+  before_filter :find_or_create_triggering, :only => [:create, :refresh]
+
   def new
     @composer = JobInvocationComposer.new.compose_from_params(
       :host_ids => params[:host_ids],
       :job_invocation => {
-        :triggering => {}
       },
       :targeting => {
         :targeting_type => Targeting::STATIC_TYPE,
@@ -28,7 +29,13 @@ class JobInvocationsController < ApplicationController
   def create
     @composer = JobInvocationComposer.new.compose_from_params(params)
     action = ::Actions::RemoteExecution::RunHostsJob
+    halt = true
+    require 'pry'; binding.pry
     if @composer.save
+      if halt
+        render :action => 'new'
+        return
+      end
       job_invocation = @composer.job_invocation
       case job_invocation.trigger_mode
       when :future
@@ -36,7 +43,7 @@ class JobInvocationsController < ApplicationController
                            job_invocation.delay_options,
                            job_invocation
       when :recurring
-        ::ForemanTasks::RecurringLogic.new_from_triggering(params[:job_invocation][:triggering])
+        ::ForemanTasks::RecurringLogic.new_from_triggering(@composer.triggering)
           .start(action, job_invocation)
       else
         ForemanTasks.async_task(action, job_invocation)
@@ -64,6 +71,10 @@ class JobInvocationsController < ApplicationController
   end
 
   private
+
+  def find_or_create_triggering
+    @triggering ||= ::ForemanTasks::Triggering.new_from_params(params[:triggering])
+  end
 
   def action_permission
     case params[:action]

@@ -1,5 +1,5 @@
 class JobInvocationComposer
-  attr_accessor :params, :job_invocation, :host_ids, :search_query
+  attr_accessor :params, :job_invocation, :host_ids, :search_query, :triggering
   attr_reader :job_template_ids
   delegate :job_name, :targeting, :to => :job_invocation
 
@@ -12,6 +12,8 @@ class JobInvocationComposer
 
     @host_ids = validate_host_ids(params[:host_ids])
     @search_query = targeting_base[:search_query]
+
+    @triggering = ::ForemanTasks::Triggering.new_from_params triggering_base
 
     job_invocation.job_name = validate_job_name(job_invocation_base[:job_name])
     job_invocation.job_name ||= available_job_names.first if job_invocation.new_record?
@@ -39,7 +41,7 @@ class JobInvocationComposer
   end
 
   def valid?
-    targeting.valid? & job_invocation.valid? & !template_invocations.map(&:valid?).include?(false)
+    triggering.valid? & targeting.valid? & job_invocation.valid? & !template_invocations.map(&:valid?).include?(false)
   end
 
   def save
@@ -155,7 +157,7 @@ class JobInvocationComposer
   end
 
   def triggering_base
-    job_invocation_base.fetch(:triggering, {})
+    @params.fetch(:triggering, {})
   end
 
   def input_values_base
@@ -239,5 +241,9 @@ class JobInvocationComposer
 
   def validate_host_ids(ids)
     Host.authorized(Targeting::RESOLVE_PERMISSION, Host).where(:id => ids).pluck(:id)
+  end
+
+  def validate_triggering(triggering_hash)
+    
   end
 end

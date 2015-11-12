@@ -39,9 +39,9 @@ class JobInvocation < ActiveRecord::Base
     end
   end
 
-  def self.allowed_trigger_modes
-    %w(immediate future recurring)
-  end
+  # def self.allowed_trigger_modes
+  #   %w(immediate future recurring)
+  # end
 
   def to_action_input
     { :id => id, :name => job_name }
@@ -75,41 +75,41 @@ class JobInvocation < ActiveRecord::Base
     end
   end
 
-  def delay_options
-    {
-      :start_at => start_at_parsed,
-      :start_before => start_before_parsed
-    }
-  end
+  # def delay_options
+  #   {
+  #     :start_at => start_at_parsed,
+  #     :start_before => start_before_parsed
+  #   }
+  # end
 
-  def trigger_mode
-    @trigger_mode || :immediate
-  end
+  # def trigger_mode
+  #   @trigger_mode || :immediate
+  # end
+  # 
+  # def trigger_mode=(value)
+  #   return trigger_mode if @trigger_mode || value.nil?
+  #   if JobInvocation.allowed_trigger_modes.include?(value)
+  #     @trigger_mode = value.to_sym
+  #   else
+  #     raise ::Foreman::Exception, _("Job Invocation trigger mode must be one of [#{JobInvocation.allowed_trigger_modes.join(', ')}]")
+  #   end
+  # end
 
-  def trigger_mode=(value)
-    return trigger_mode if @trigger_mode || value.nil?
-    if JobInvocation.allowed_trigger_modes.include?(value)
-      @trigger_mode = value.to_sym
-    else
-      raise ::Foreman::Exception, _("Job Invocation trigger mode must be one of [#{JobInvocation.allowed_trigger_modes.join(', ')}]")
-    end
-  end
-
-  def start_at_parsed
-    @start_at.present? && Time.strptime(@start_at, time_format)
-  end
-
-  def start_at
-    @start_at ||= Time.now.strftime(time_format)
-  end
-
-  def start_before_parsed
-    @start_before.present? && Time.strptime(@start_before, time_format) || nil
-  end
-
-  def time_format
-    '%Y-%m-%d %H:%M'
-  end
+  # def start_at_parsed
+  #   @start_at.present? && Time.strptime(@start_at, time_format)
+  # end
+  # 
+  # def start_at
+  #   @start_at ||= Time.now.strftime(time_format)
+  # end
+  # 
+  # def start_before_parsed
+  #   @start_before.present? && Time.strptime(@start_before, time_format) || nil
+  # end
+  # 
+  # def time_format
+  #   '%Y-%m-%d %H:%M'
+  # end
 
   def template_invocation_for_host(host)
     providers = available_providers(host)
