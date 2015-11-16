@@ -28,26 +28,9 @@ class JobInvocationsController < ApplicationController
 
   def create
     @composer = JobInvocationComposer.new.compose_from_params(params)
-    action = ::Actions::RemoteExecution::RunHostsJob
-    halt = true
-    require 'pry'; binding.pry
     if @composer.save
-      if halt
-        render :action => 'new'
-        return
-      end
       job_invocation = @composer.job_invocation
-      case job_invocation.trigger_mode
-      when :future
-        ForemanTasks.delay action,
-                           job_invocation.delay_options,
-                           job_invocation
-      when :recurring
-        ::ForemanTasks::RecurringLogic.new_from_triggering(@composer.triggering)
-          .start(action, job_invocation)
-      else
-        ForemanTasks.async_task(action, job_invocation)
-      end
+      @composer.triggering.trigger(::Actions::RemoteExecution::RunHostsJob, job_invocation)
       redirect_to job_invocation_path(job_invocation)
     else
       render :action => 'new'

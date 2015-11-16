@@ -18,11 +18,8 @@ class JobInvocationComposer
     job_invocation.job_name = validate_job_name(job_invocation_base[:job_name])
     job_invocation.job_name ||= available_job_names.first if job_invocation.new_record?
     job_invocation.targeting = build_targeting
-    job_invocation.trigger_mode = triggering_base[:trigger_mode]
-    job_invocation.start_at = triggering_base[:start_at]
-    job_invocation.start_before = triggering_base[:start_before]
     job_invocation.task_group = JobInvocationTaskGroup.new
-    job_invocation.recurring_options = triggering_base[:recurring_options]
+    job_invocation.triggering = @triggering
 
     @job_template_ids = validate_job_template_ids(job_templates_base.keys.compact)
     self
@@ -45,7 +42,7 @@ class JobInvocationComposer
   end
 
   def save
-    valid? && job_invocation.save
+    valid? && triggering.save && job_invocation.save
   end
 
   def available_templates
@@ -241,9 +238,5 @@ class JobInvocationComposer
 
   def validate_host_ids(ids)
     Host.authorized(Targeting::RESOLVE_PERMISSION, Host).where(:id => ids).pluck(:id)
-  end
-
-  def validate_triggering(triggering_hash)
-    
   end
 end
