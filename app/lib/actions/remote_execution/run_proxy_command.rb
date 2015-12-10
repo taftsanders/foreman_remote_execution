@@ -47,6 +47,7 @@ module Actions
           records.concat(current_proxy_output)
         end
         records.sort_by { |record| record['timestamp'].to_f }
+        records.concat exit_records
       end
 
       private
@@ -67,20 +68,21 @@ module Actions
       end
 
       def finalized_output
-        records = []
-
         if proxy_result.present?
-          records.concat(proxy_result)
+          proxy_result
         else
-          records << format_output(_('No output'))
+          [format_output(_('No output'))]
         end
+      end
 
+      def exit_records
         if exit_status
-          records << format_output(_("Exit status: %s") % exit_status, 'stdout', task.ended_at)
+          [format_output(_("Exit status: %s") % exit_status, 'stdout', task.ended_at)]
         elsif run_step && run_step.error
-          records << format_output(_("Job finished with error") + ": #{run_step.error.exception_class} - #{run_step.error.message}", 'debug', task.ended_at)
+          [format_output(_("Job finished with error") + ": #{run_step.error.exception_class} - #{run_step.error.message}", 'debug', task.ended_at)]
+        else
+          []
         end
-        return records
       end
 
       def proxy_result
