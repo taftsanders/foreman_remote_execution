@@ -160,7 +160,11 @@ class JobInvocation < ActiveRecord::Base
   end
 
   def sub_task_for_host(host)
-    template_invocations.find_by(:host => host.id).try(:run_host_job_task)
+    sub_task_for_host_id host.id
+  end
+
+  def sub_task_for_host_id(id)
+    template_invocations.find_by(:host => id).try(:run_host_job_task)
   end
 
   def output(host)

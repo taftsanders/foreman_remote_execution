@@ -7,7 +7,7 @@ module Api
 
       before_action :find_optional_nested_object
       before_action :find_host, :only => %w{output}
-      before_action :find_resource, :only => %w{show update destroy clone}
+      before_action :find_resource, :only => %w{show update destroy clone outputs}
       before_action :validate_template, :only => :create
 
       wrap_parameters JobInvocation, :include => (JobInvocation.attribute_names + [:ssh])
@@ -89,11 +89,48 @@ module Api
         end
       end
 
+      api :GET, '/job_invocations/:id/outputs', N_('Get output for hosts')
+      param :id, :identifier, :required => true
+      param :host_ids, Array, :desc => N_('Array of host ids to get output for')
+      param :since, String, :required => false
+      def outputs
+        host_ids = params['host_ids'] || @job_invocation.template_invocations_host_ids
+        if @job_invocation.task.delayed?
+          outputs = host_ids.reduce({}) do |acc, id|
+            acc.merge(id => { :refresh => true, :output => [] })
+          end
+          render :json => { :delayed => true, :start_at => @job_invocation.task.start_at, :outputs => outputs }
+          return
+        end
+
+        results = host_ids.reduce({}) do |acc, id|
+          task = @job_invocation.sub_task_for_host_id(id)
+          if task
+            refresh = task.pending?
+            since = params[:since].to_f if params[:since].present?
+
+            line_sets = task.main_action.live_output
+            line_sets = line_sets.drop_while { |o| o['timestamp'].to_f <= since } if since
+
+            if line_sets.blank?
+              acc.merge(id => {:refresh => refresh, :output => []})
+            else
+              acc.merge(id => {:refresh => refresh, :output => line_sets })
+            end
+          else
+            acc
+          end
+        end
+        render :json => { :outputs => results }
+      end
+
       private
 
       def action_permission
         case params[:action]
         when 'output'
+          :view
+        when 'outputs'
           :view
         else
           super
