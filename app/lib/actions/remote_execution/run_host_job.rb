@@ -5,6 +5,7 @@ module Actions
       include ::Actions::Helpers::WithDelegatedAction
 
       middleware.do_not_use Dynflow::Middleware::Common::Transaction
+      middleware.use Actions::Middleware::HideSecrets
 
       def resource_locks
         :link
@@ -47,10 +48,17 @@ module Actions
         raise _('Failed rendering template: %s') % renderer.error_message unless script
 
         provider = template_invocation.template.provider
-        hostname = provider.find_ip_or_hostname(host)
+
+        secrets = { :ssh_password => job_invocation.password,
+                    :key_passphrase => job_invocation.key_passphrase }
+
+        additional_options = { :hostname => provider.find_ip_or_hostname(host),
+                               :script => script,
+                               :execution_timeout_interval => job_invocation.execution_timeout_interval,
+                               :secrets => secrets }
         action_options = provider.proxy_command_options(template_invocation, host)
-                                 .merge(:hostname => hostname, :script => script,
-                                        :execution_timeout_interval => job_invocation.execution_timeout_interval)
+                                 .merge(additional_options)
+
         plan_delegated_action(proxy, ForemanRemoteExecutionCore::Actions::RunScript, action_options)
         plan_self
       end
