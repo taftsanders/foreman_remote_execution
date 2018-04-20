@@ -49,6 +49,10 @@ module Actions
       end
 
       def finalize(*args)
+        host = Host.find(input[:host][:id])
+        status = (host.execution_status_object ||= HostStatus::ExecutionStatus.new)
+        status.status = exit_status.zero? ? HostStatus::ExecutionStatus::OK : HostStatus::ExecutionStatus::ERROR
+        status.save!
         check_exit_status
       end
 
