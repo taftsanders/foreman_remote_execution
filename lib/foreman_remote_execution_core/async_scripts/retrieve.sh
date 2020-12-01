@@ -116,9 +116,9 @@ payload() {
         exit_code=null
     fi
 
+    output=$(prepare_output | base64 -w0)
     if [ -e "$BASE_DIR/manual_mode" ]; then
         manual_mode=true
-        output=$(prepare_output | base64 -w0)
     else
         manual_mode=false
     fi
