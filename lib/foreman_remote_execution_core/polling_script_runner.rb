@@ -1,9 +1,13 @@
 require 'base64'
+require 'mqtt'
+require 'json'
 
 module ForemanRemoteExecutionCore
   class PollingScriptRunner < ScriptRunner
 
     DEFAULT_REFRESH_INTERVAL = 60
+    BROKER = 'localhost'
+    BROKER_PORT = 1883
 
     def self.load_script(name)
       script_dir = File.expand_path('../async_scripts', __FILE__)
@@ -29,82 +33,74 @@ module ForemanRemoteExecutionCore
     end
 
     def prepare_start
-      super
-      @base_dir = File.dirname @remote_script
       upload_control_scripts
     end
 
     def initialization_script
       close_stdin = '</dev/null'
       close_fds = close_stdin + ' >/dev/null 2>/dev/null'
-      main_script = "(#{@remote_script} #{close_stdin} 2>&1; echo $?>#{@base_dir}/init_exit_code) >#{@base_dir}/output"
-      control_script_finish = "#{@control_script_path} init-script-finish"
+      main_script = "(./script.sh #{close_stdin} 2>&1; echo $?>init_exit_code)"
+      control_script_finish = "./control.sh init-script-finish"
       <<-SCRIPT.gsub(/^ +\| /, '')
-      | export CONTROL_SCRIPT="#{@control_script_path}"
-      | sh -c '#{main_script}; #{control_script_finish}' #{close_fds} &
-      | echo $! > '#{@base_dir}/pid'
+      | export CONTROL_SCRIPT="$(readlink -f control.sh)"
+      | export PERIODIC_UPDATE_INTERVAL=15
+      | sh -c '#{main_script} | ./control.sh update; #{control_script_finish}' #{close_fds} &
+      | echo $! > pid
       SCRIPT
     end
 
     def trigger(*args)
-      run_sync(*args)
+      payload = {
+        "callback_host" => @callback_host,
+        "task_id" => @task_id,
+        "step_id" => @step_id,
+        "otp" => @otp,
+        "files" => [
+          "control.sh", "retrieve.sh", "env.sh", "main.sh", "script.sh"
+        ].map { |f| "/dynflow/tasks/store/#{@task_id}/#{@step_id}/#{f}" },
+        "main" => "main.sh"
+      }
+      @logger.debug payload
+      MQTT::Client.connect(BROKER, BROKER_PORT) do |c|
+        c.publish("per-host/#{@host}", JSON.dump(payload), false, 1)
+      end
     end
 
     def refresh
-      err = output = nil
-      begin
-        _, output, err = run_sync("#{@user_method.cli_command_prefix} #{@retrieval_script}")
-      rescue => e
-        @logger.info("Error while connecting to the remote host on refresh: #{e.message}")
-      end
-      return if output.nil? || output.empty?
-
-      lines = output.lines
-      result = lines.shift.match(/^DONE (\d+)?/)
-      publish_data(lines.join, 'stdout') unless lines.empty?
-      publish_data(err, 'stderr') unless err.empty?
-      if result
-        exitcode = result[1] || 0
-        publish_exit_status(exitcode.to_i)
-        cleanup
-      end
-    ensure
-      destroy_session
     end
 
     def external_event(event)
       data = event.data
-      if data['manual_mode']
-        load_event_updates(data)
-      else
-        # getting the update from automatic mode - reaching to the host to get the latest update
-        return run_refresh
-      end
-    ensure
-      destroy_session
+      load_event_updates(data)
     end
 
     def close
-      super
-      ForemanTasksCore::OtpManager.drop_otp(@task_id, @otp) if @otp
+      SmartProxyDynflowCore::Memstore.instance.drop(@task_id)
+      ForemanTasksCore::OtpManager.drop_otp(@task_id, @otp)
     end
 
     def upload_control_scripts
       return if @control_scripts_uploaded
 
-      cp_script_to_remote(env_script, 'env.sh')
-      @control_script_path = cp_script_to_remote(CONTROL_SCRIPT, 'control.sh')
-      @retrieval_script = cp_script_to_remote(RETRIEVE_SCRIPT, 'retrieve.sh')
-      @control_scripts_uploaded = true
+      {
+        "env.sh" => env_script,
+        "control.sh" => CONTROL_SCRIPT,
+        "retrieve.sh" => RETRIEVE_SCRIPT,
+        "script.sh" => sanitize_script(@script),
+        "main.sh" => initialization_script
+      }.each do |name, content|
+        SmartProxyDynflowCore::Memstore.instance.add(@task_id, @step_id, name, content)
+      end
+      @control_script_uploaded = true
     end
 
     # Script setting the dynamic values to env variables: it's sourced from other control scripts
     def env_script
-      <<-SCRIPT.gsub(/^ +\| /, '')
-      | CALLBACK_HOST="#{@callback_host}"
-      | TASK_ID="#{@task_id}"
-      | STEP_ID="#{@step_id}"
-      | OTP="#{@otp}"
+      <<~SCRIPT
+        CALLBACK_HOST="#{@callback_host}"
+        TASK_ID="#{@task_id}"
+        STEP_ID="#{@step_id}"
+        OTP="#{@otp}"
       SCRIPT
     end
 
@@ -117,20 +113,10 @@ module ForemanRemoteExecutionCore
         lines = Base64.decode64(event_data['output']).sub(/\A(RUNNING|DONE).*\n/, '')
         continuous_output.add_output(lines, 'stdout')
       end
-      cleanup if event_data['exit_code']
       new_update(continuous_output, event_data['exit_code'])
     end
 
     def cleanup
-      run_sync("rm -rf \"#{remote_command_dir}\"") if @cleanup_working_dirs
-    end
-
-    def destroy_session
-      if @session
-        @logger.debug("Closing session with #{@ssh_user}@#{@host}")
-        @session.close
-        @session = nil
-      end
     end
   end
 end
