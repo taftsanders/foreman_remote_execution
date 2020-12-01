@@ -61,6 +61,11 @@ periodic_update_finish() {
     fi
 }
 
+cleanup() {
+    cd /
+    rm -rf "$BASE_DIR"
+}
+
 ACTION=${1:-finish}
 
 case "$ACTION" in
@@ -69,6 +74,7 @@ case "$ACTION" in
             # make the exit code of initialization script the exit code of the whole job
             cp init_exit_code exit_code
             update
+            cleanup
         fi
         ;;
     finish)
