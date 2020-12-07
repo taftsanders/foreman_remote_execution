@@ -2,6 +2,9 @@ require 'base64'
 require 'mqtt'
 require 'json'
 
+require 'rubygems'
+require 'rubygems/package'
+
 module ForemanRemoteExecutionCore
   class PollingScriptRunner < ScriptRunner
 
@@ -56,8 +59,9 @@ module ForemanRemoteExecutionCore
         "step_id" => @step_id,
         "otp" => @otp,
         "files" => [
-          "control.sh", "retrieve.sh", "env.sh", "main.sh", "script.sh"
-        ].map { |f| "/dynflow/tasks/store/#{@task_id}/#{@step_id}/#{f}" },
+          # "control.sh", "retrieve.sh", "env.sh", "main.sh", "script.sh"
+          "/dynflow/tasks/store/#{@task_id}/#{@step_id}/archive.tar",
+        ],
         "main" => "main.sh"
       }
       @logger.debug payload
@@ -82,15 +86,24 @@ module ForemanRemoteExecutionCore
     def upload_control_scripts
       return if @control_scripts_uploaded
 
-      {
-        "env.sh" => env_script,
-        "control.sh" => CONTROL_SCRIPT,
-        "retrieve.sh" => RETRIEVE_SCRIPT,
-        "script.sh" => sanitize_script(@script),
-        "main.sh" => initialization_script
-      }.each do |name, content|
-        SmartProxyDynflowCore::Memstore.instance.add(@task_id, @step_id, name, content)
+      tar = StringIO.new("")
+
+      Gem::Package::TarWriter.new(tar) do |t|
+        {
+          "env.sh" => env_script,
+          "control.sh" => CONTROL_SCRIPT,
+          "retrieve.sh" => RETRIEVE_SCRIPT,
+          "script.sh" => sanitize_script(@script),
+          "main.sh" => initialization_script,
+        }.each do |name, content|
+          t.add_file name, 0755 do |f|
+            f.write content
+          end
+        end
       end
+      tar.rewind
+
+      SmartProxyDynflowCore::Memstore.instance.add(@task_id, @step_id, "archive.tar", tar.string)
       @control_script_uploaded = true
     end
 
