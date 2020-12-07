@@ -97,12 +97,16 @@ pid=$(cat "$BASE_DIR/pid")
 [ -f "$BASE_DIR/position" ] || echo 1 > "$BASE_DIR/position"
 position=$(cat "$BASE_DIR/position")
 
-prepare_output() {
+output_header() {
     if [ -e "$BASE_DIR/manual_mode" ] || ([ -n "$pid" ] && pgrep -P "$pid" >/dev/null 2>&1); then
         echo RUNNING
     else
         echo "DONE $(cat "$BASE_DIR/exit_code" 2>/dev/null)"
     fi
+}
+
+prepare_output() {
+    output_header
     [ -f "$BASE_DIR/output" ] || exit 0
     tail --bytes "+${position}" "$BASE_DIR/output" > "$TMP_OUTPUT_FILE"
     cat "$TMP_OUTPUT_FILE"
@@ -137,7 +141,8 @@ if [ "$1" = "push_update" ]; then
         exit_code=""
         action="update"
     fi
-    $CURL -X POST -d "$(payload $exit_code)" -u "$AUTH" "$URL_PREFIX"/$action 2>>"$BASE_DIR/curl_stderr"
+    echo "Pushing update to $URL_PREFIX/$action, status $(output_header)" >&2
+    $CURL -X POST -d "$(payload $exit_code)" -u "$AUTH" "$URL_PREFIX"/$action
     success=$?
 else
     prepare_output

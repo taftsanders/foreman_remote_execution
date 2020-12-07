@@ -41,7 +41,7 @@ module ForemanRemoteExecutionCore
 
     def initialization_script
       close_stdin = '</dev/null'
-      close_fds = close_stdin + ' >/dev/null 2>/dev/null'
+      close_fds = close_stdin + ' >/dev/null'
       main_script = "(./script.sh #{close_stdin} 2>&1; echo $?>init_exit_code)"
       control_script_finish = "./control.sh init-script-finish"
       <<-SCRIPT.gsub(/^ +\| /, '')
