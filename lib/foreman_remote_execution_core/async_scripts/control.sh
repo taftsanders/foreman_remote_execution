@@ -28,7 +28,7 @@ fi
 
 # send the callback data to proxy
 update() {
-    "$BASE_DIR/retrieve.sh" push_update
+    "$BASE_DIR/retrieve.sh" push_update "$1"
 }
 
 # wait for named pipe $1 to retrieve data. If $2 is provided, it serves as timeout
@@ -77,7 +77,7 @@ case "$ACTION" in
         if ! [ -e "$BASE_DIR/manual_mode" ]; then
             # make the exit code of initialization script the exit code of the whole job
             cp init_exit_code exit_code
-            update
+            update 10
             cleanup
         fi
         ;;

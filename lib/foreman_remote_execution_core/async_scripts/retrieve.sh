@@ -12,7 +12,7 @@ BASE_DIR="$(dirname "$(readlink -f "$0")")"
 . "$BASE_DIR/env.sh"
 URL_PREFIX="$CALLBACK_HOST/dynflow/tasks/$TASK_ID"
 AUTH="$TASK_ID:$OTP"
-CURL="curl --silent --show-error --fail --max-time 10"
+CURL="curl --silent --show-error --fail --max-time 30"
 
 MY_LOCK_FILE="$BASE_DIR/retrieve_lock.$$"
 MY_PID=$$
@@ -141,8 +141,23 @@ if [ "$1" = "push_update" ]; then
         exit_code=""
         action="update"
     fi
-    echo "Pushing update to $URL_PREFIX/$action, status $(output_header)" >&2
-    $CURL -X POST -d "$(payload $exit_code)" -u "$AUTH" "$URL_PREFIX"/$action
+    : ${RETRY_LIMIT:=$2}
+    : ${RETRY_LIMIT:=0}
+    : ${RETRY_DELAY:=15}
+    retries=0
+    echo "Pushing update to $URL_PREFIX/$action" >&2
+    # curl should exit within 30 seconds, if it gets stuck, the timeout will kill it after a minute
+    while ! timeout 60 $CURL -X POST -d "$(payload $exit_code)" -u "$AUTH" "$URL_PREFIX"/$action ; do
+      retries=$((retries + 1))
+      if [ $retries -ge $RETRY_LIMIT ]; then
+        echo "Failed to upload updates after $RETRY_LIMIT retries, aborting." >&2
+        break
+      else
+        echo "Pushing update to $URL_PREFIX/$action failed, retrying in $RETRY_DELAY seconds" >&2
+        sleep $RETRY_DELAY
+        echo "Retrying to push update to $URL_PREFIX/$action" >&2
+      fi
+    done
     success=$?
 else
     prepare_output
