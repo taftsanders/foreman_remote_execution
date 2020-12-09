@@ -46,7 +46,6 @@ module ForemanRemoteExecutionCore
       control_script_finish = "./control.sh init-script-finish"
       <<-SCRIPT.gsub(/^ +\| /, '')
       | export CONTROL_SCRIPT="$(readlink -f control.sh)"
-      | export PERIODIC_UPDATE_INTERVAL=15
       | sh -c '#{main_script} | ./control.sh update; #{control_script_finish}' #{close_fds} &
       | echo $! > pid
       SCRIPT

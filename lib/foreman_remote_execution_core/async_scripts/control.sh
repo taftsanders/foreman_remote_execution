@@ -14,7 +14,12 @@
 # and `$CONTROL_SCRIPT finish 0` once finished (with 0 as exit code) to send output to the remote execution jobs
 # and `$CONTROL_SCRIPT finish 0` once finished (with 0 as exit code)
 BASE_DIR="$(dirname "$(readlink -f "$0")")"
-: ${PERIODIC_UPDATE_INTERVAL:=1}
+: ${PERIODIC_UPDATE_INTERVAL_LOWER:=40}
+: ${PERIODIC_UPDATE_INTERVAL_UPPER:=60}
+
+random_in_range() {
+    echo $((RANDOM % ($2 - $1) + $1))
+}
 
 if ! command -v curl >/dev/null; then
     echo 'curl is required' >&2
@@ -43,9 +48,8 @@ wait_for_pipe() {
 
 # function run in background, when receiving update data via STDIN.
 periodic_update() {
-    interval=$PERIODIC_UPDATE_INTERVAL
     # reading some data from periodic_update_control signals we're done
-    while ! wait_for_pipe "$BASE_DIR/periodic_update_control" "$interval"; do
+    while ! wait_for_pipe "$BASE_DIR/periodic_update_control" "$(random_in_range $PERIODIC_UPDATE_INTERVAL_LOWER $PERIODIC_UPDATE_INTERVAL_UPPER)"; do
         update
     done
     # one more update before we finish
