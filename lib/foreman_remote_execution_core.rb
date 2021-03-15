@@ -60,6 +60,11 @@ module ForemanRemoteExecutionCore
                       end
   end
 
+  def self.pull_mode?
+    # TODO
+    true
+  end
+
   if ForemanTasksCore.dynflow_present?
     require 'foreman_tasks_core/runner'
     require 'foreman_remote_execution_core/log_filter'
@@ -74,7 +79,16 @@ module ForemanRemoteExecutionCore
     require 'foreman_remote_execution_core/actions'
 
     if defined?(::SmartProxyDynflowCore)
-      SmartProxyDynflowCore::TaskLauncherRegistry.register('ssh', ForemanTasksCore::TaskLauncher::Batch)
+      launcher_klass = if pull_mode?
+                         require 'foreman_remote_execution_core/job_storage'
+                         require 'foreman_remote_execution_core/api'
+                         require 'foreman_remote_execution_core/task_launcher'
+
+                         TaskLauncher::Pull
+                       else
+                         ForemanTasksCore::TaskLauncher::Batch
+                       end
+      SmartProxyDynflowCore::TaskLauncherRegistry.register('ssh', launcher_klass)
     end
   end
 
