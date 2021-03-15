@@ -61,8 +61,7 @@ module ForemanRemoteExecutionCore
       end
 
       def mqtt_enabled?
-        # TODO:
-        false
+        SmartProxyDynflowCore::Settings.instance.plugins['remote_execution_ssh']['mode'] == 'pull-mqtt'
       end
 
       def failed_run?

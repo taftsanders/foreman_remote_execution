@@ -8,13 +8,14 @@ module ForemanRemoteExecutionCore
     :remote_working_dir      => '/var/tmp',
     :local_working_dir       => '/var/tmp',
     :kerberos_auth           => false,
-    :async_ssh               => false,
     # When set to nil, makes REX use the runner's default interval
     :runner_refresh_interval => nil,
     :ssh_log_level           => :fatal,
+    :mode                    => :ssh,
     :cleanup_working_dirs    => true)
 
   SSH_LOG_LEVELS = %w(debug info warn error fatal).freeze
+  MODES = %i(ssh async-ssh pull pull-mqtt).freeze
 
   def self.simulate?
     %w(yes true 1).include? ENV.fetch('REX_SIMULATE', '').downcase
@@ -23,7 +24,16 @@ module ForemanRemoteExecutionCore
   def self.validate_settings!
     super
     self.validate_ssh_log_level!
+    self.validate_mode!
     @settings[:ssh_log_level] = @settings[:ssh_log_level].to_sym
+    @settings[:mode] = @settings[:mode].to_sym
+  end
+
+  def self.validate_mode!
+    wanted = @settings[:mode].to_sym
+    unless MODES.include? wanted
+      raise "Wrong value '#{wanted}' for mode, must be one of #{MODES.join(', ')}"
+    end
   end
 
   def self.validate_ssh_log_level!
@@ -53,7 +63,7 @@ module ForemanRemoteExecutionCore
   def self.runner_class
     @runner_class ||= if simulate?
                         FakeScriptRunner
-                      elsif settings[:async_ssh]
+                      elsif settings[:mode] == :"async-ssh"
                         PollingScriptRunner
                       else
                         ScriptRunner
@@ -61,8 +71,7 @@ module ForemanRemoteExecutionCore
   end
 
   def self.pull_mode?
-    # TODO
-    true
+    %i(pull pull-mqtt).include? settings[:mode]
   end
 
   if ForemanTasksCore.dynflow_present?
@@ -79,16 +88,18 @@ module ForemanRemoteExecutionCore
     require 'foreman_remote_execution_core/actions'
 
     if defined?(::SmartProxyDynflowCore)
-      launcher_klass = if pull_mode?
-                         require 'foreman_remote_execution_core/job_storage'
-                         require 'foreman_remote_execution_core/api'
-                         require 'foreman_remote_execution_core/task_launcher'
+      SmartProxyDynflowCore::Core.after_initialize do
+        launcher_klass = if pull_mode?
+                           require 'foreman_remote_execution_core/job_storage'
+                           require 'foreman_remote_execution_core/api'
+                           require 'foreman_remote_execution_core/task_launcher'
 
-                         TaskLauncher::Pull
-                       else
-                         ForemanTasksCore::TaskLauncher::Batch
-                       end
-      SmartProxyDynflowCore::TaskLauncherRegistry.register('ssh', launcher_klass)
+                           TaskLauncher::Pull
+                         else
+                           ForemanTasksCore::TaskLauncher::Batch
+                         end
+        SmartProxyDynflowCore::TaskLauncherRegistry.register('ssh', launcher_klass)
+      end
     end
   end
 
