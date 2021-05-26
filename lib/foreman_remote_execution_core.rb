@@ -81,7 +81,7 @@ module ForemanRemoteExecutionCore
     # rubocop:enable Lint/SuppressedException
 
     if defined?(::SmartProxyDynflowCore)
-      SmartProxyDynflowCore::TaskLauncherRegistry.register('ssh', ForemanTasksCore::TaskLauncher::Batch)
+      SmartProxyDynflowCore::TaskLauncherRegistry.register('ssh', ForemanTasksCore::TaskLauncher::AsyncBatch)
     end
   end
 
