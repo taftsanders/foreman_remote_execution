@@ -38,7 +38,7 @@ class ScriptExecutionProvider < RemoteExecutionProvider
 
     def ssh_params(host)
       proxy_selector = ::RemoteExecutionProxySelector.new
-      proxy = proxy_selector.determine_proxy(host, 'SSH')
+      proxy = proxy_selector.determine_proxy(host, 'script', capability: 'cockpit')
       {
         :hostname => find_ip_or_hostname(host),
         :proxy => proxy.class == Symbol ? proxy : proxy.url,
