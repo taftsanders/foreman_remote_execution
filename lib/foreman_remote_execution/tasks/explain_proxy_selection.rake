@@ -88,7 +88,7 @@ namespace :foreman_remote_execution do
 
   def output_verbose(results, provider)
     errors = [:not_defined, :not_available]
-
+    puts results[0]
     results.each do |host|
       puts "=> Host #{host[:host]}"
       host[:strategies].each do |strategy|
